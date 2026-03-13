@@ -68,9 +68,10 @@ export async function recognize(
 
 export function preprocessCanvas(canvas: HTMLCanvasElement): Float32Array {
   const size = 64
-  const padding = 4 // px padding around the character
+  const padding = 8 // px padding around the character in 64x64 space
+  const alphaThreshold = 128 // ignore guide lines (alpha ~15), detect strokes (alpha 255)
 
-  // Find bounding box of drawn strokes
+  // Find bounding box of drawn strokes (ignoring guide lines)
   const srcCtx = canvas.getContext('2d')!
   const srcData = srcCtx.getImageData(0, 0, canvas.width, canvas.height)
   let minX = canvas.width,
@@ -80,7 +81,7 @@ export function preprocessCanvas(canvas: HTMLCanvasElement): Float32Array {
   for (let y = 0; y < canvas.height; y++) {
     for (let x = 0; x < canvas.width; x++) {
       const a = srcData.data[(y * canvas.width + x) * 4 + 3]
-      if (a > 0) {
+      if (a > alphaThreshold) {
         if (x < minX) minX = x
         if (x > maxX) maxX = x
         if (y < minY) minY = y
@@ -94,10 +95,19 @@ export function preprocessCanvas(canvas: HTMLCanvasElement): Float32Array {
     return new Float32Array(size * size)
   }
 
-  // Make the crop region square (centered on the strokes)
+  // Add a small margin around the detected strokes (10% of the bounding box)
   const bw = maxX - minX
   const bh = maxY - minY
-  const side = Math.max(bw, bh)
+  const margin = Math.max(bw, bh) * 0.1
+  minX = Math.max(0, minX - margin)
+  minY = Math.max(0, minY - margin)
+  maxX = Math.min(canvas.width, maxX + margin)
+  maxY = Math.min(canvas.height, maxY + margin)
+
+  // Make the crop region square (centered on the strokes)
+  const cropW = maxX - minX
+  const cropH = maxY - minY
+  const side = Math.max(cropW, cropH)
   const cx = (minX + maxX) / 2
   const cy = (minY + maxY) / 2
   const cropX = cx - side / 2
