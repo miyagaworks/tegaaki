@@ -68,11 +68,54 @@ export async function recognize(
 
 export function preprocessCanvas(canvas: HTMLCanvasElement): Float32Array {
   const size = 64
+  const padding = 4 // px padding around the character
+
+  // Find bounding box of drawn strokes
+  const srcCtx = canvas.getContext('2d')!
+  const srcData = srcCtx.getImageData(0, 0, canvas.width, canvas.height)
+  let minX = canvas.width,
+    minY = canvas.height,
+    maxX = 0,
+    maxY = 0
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      const a = srcData.data[(y * canvas.width + x) * 4 + 3]
+      if (a > 0) {
+        if (x < minX) minX = x
+        if (x > maxX) maxX = x
+        if (y < minY) minY = y
+        if (y > maxY) maxY = y
+      }
+    }
+  }
+
+  // Fallback if nothing drawn
+  if (maxX <= minX || maxY <= minY) {
+    return new Float32Array(size * size)
+  }
+
+  // Make the crop region square (centered on the strokes)
+  const bw = maxX - minX
+  const bh = maxY - minY
+  const side = Math.max(bw, bh)
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
+  const cropX = cx - side / 2
+  const cropY = cy - side / 2
+
   const tempCanvas = document.createElement('canvas')
   tempCanvas.width = size
   tempCanvas.height = size
   const tempCtx = tempCanvas.getContext('2d')!
-  tempCtx.drawImage(canvas, 0, 0, size, size)
+
+  // Fill with white background first
+  tempCtx.fillStyle = '#ffffff'
+  tempCtx.fillRect(0, 0, size, size)
+
+  // Draw the cropped square region into 64x64 with padding
+  const drawSize = size - padding * 2
+  tempCtx.drawImage(canvas, cropX, cropY, side, side, padding, padding, drawSize, drawSize)
+
   const imageData = tempCtx.getImageData(0, 0, size, size)
   const float32 = new Float32Array(size * size)
   for (let i = 0; i < size * size; i++) {
