@@ -12,25 +12,13 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [recognizing, setRecognizing] = useState(false)
 
-  const getCanvasPos = useCallback(
-    (e: PointerEvent, canvas: HTMLCanvasElement) => {
-      const rect = canvas.getBoundingClientRect()
-      const dpr = window.devicePixelRatio || 1
-      return {
-        x: (e.clientX - rect.left) * dpr,
-        y: (e.clientY - rect.top) * dpr,
-      }
-    },
-    [],
-  )
-
   const drawGuideLines = useCallback((ctx: CanvasRenderingContext2D) => {
     const w = ctx.canvas.width
     const h = ctx.canvas.height
     ctx.save()
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)'
     ctx.lineWidth = 1
-    ctx.setLineDash([4, 4])
+    ctx.setLineDash([8, 8])
 
     // Center cross
     ctx.beginPath()
@@ -83,7 +71,7 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
     }, 500)
   }, [triggerRecognition])
 
-  useEffect(() => {
+  const initCanvas = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -96,13 +84,45 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
     if (!ctx) return
 
     drawGuideLines(ctx)
+  }, [drawGuideLines])
+
+  useEffect(() => {
+    initCanvas()
+
+    const handleResize = () => initCanvas()
+    window.addEventListener('resize', handleResize)
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const getPos = (e: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect()
+      const dpr = window.devicePixelRatio || 1
+      return {
+        x: (e.clientX - rect.left) * dpr,
+        y: (e.clientY - rect.top) * dpr,
+      }
+    }
+
+    const setupStroke = (ctx: CanvasRenderingContext2D) => {
+      const dpr = window.devicePixelRatio || 1
+      ctx.lineWidth = 5 * dpr
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.strokeStyle = '#1a1a1a'
+    }
 
     const handlePointerDown = (e: PointerEvent) => {
+      e.preventDefault()
       isDrawing.current = true
       canvas.setPointerCapture(e.pointerId)
-      const pos = getCanvasPos(e, canvas)
+      const pos = getPos(e)
       ctx.beginPath()
       ctx.moveTo(pos.x, pos.y)
+      setupStroke(ctx)
       if (timerRef.current) {
         clearTimeout(timerRef.current)
         timerRef.current = null
@@ -111,14 +131,18 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
 
     const handlePointerMove = (e: PointerEvent) => {
       if (!isDrawing.current) return
-      const pos = getCanvasPos(e, canvas)
-      const dpr = window.devicePixelRatio || 1
-      ctx.lineWidth = 3 * dpr
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.strokeStyle = '#1a1a1a'
-      ctx.lineTo(pos.x, pos.y)
+      e.preventDefault()
+
+      // Use coalesced events for smoother strokes
+      const events = e.getCoalescedEvents?.() ?? [e]
+      for (const ce of events) {
+        const pos = getPos(ce)
+        ctx.lineTo(pos.x, pos.y)
+      }
       ctx.stroke()
+      ctx.beginPath()
+      const lastPos = getPos(e)
+      ctx.moveTo(lastPos.x, lastPos.y)
       hasStrokes.current = true
     }
 
@@ -136,22 +160,21 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
     canvas.addEventListener('pointerleave', handlePointerUp)
 
     return () => {
+      window.removeEventListener('resize', handleResize)
       canvas.removeEventListener('pointerdown', handlePointerDown)
       canvas.removeEventListener('pointermove', handlePointerMove)
       canvas.removeEventListener('pointerup', handlePointerUp)
       canvas.removeEventListener('pointerleave', handlePointerUp)
     }
-  }, [drawGuideLines, getCanvasPos, startDebounceTimer])
+  }, [initCanvas, startDebounceTimer])
 
   return (
-    <div className="draw-tab">
-      <div className="canvas-wrapper">
-        <canvas ref={canvasRef} className="draw-canvas" />
-        <button className="clear-button" type="button" onClick={clearCanvas}>
-          クリア
-        </button>
-      </div>
-      {recognizing && <p className="recognizing-indicator">認識中...</p>}
-    </div>
+    <>
+      <canvas ref={canvasRef} className="draw-canvas" />
+      <button className="clear-button" type="button" onClick={clearCanvas}>
+        消す
+      </button>
+      {recognizing && <div className="recognizing-indicator">認識中...</div>}
+    </>
   )
 }

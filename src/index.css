@@ -21,7 +21,9 @@
   padding: 0;
 }
 
-html {
+html, body, #root {
+  height: 100dvh;
+  overflow: hidden;
   font-family: var(--font-sans);
   color: var(--ink);
   background-color: var(--surface);
@@ -29,91 +31,82 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  max-width: 480px;
-  margin: 0 auto;
-  min-height: 100dvh;
+/* ========================
+   Main Screen
+   ======================== */
+
+.main-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
 }
 
-#root {
-  min-height: 100dvh;
-}
-
-/* Title Bar */
+/* Title + Tab bar combined */
 .title-bar {
-  text-align: center;
-  padding: 12px 16px;
-  font-family: var(--font-serif);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink);
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-/* Tab Switcher */
+.title-text {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  margin-right: auto;
+}
+
 .tab-bar {
   display: flex;
-  border-bottom: 1px solid var(--border);
+  gap: 2px;
 }
 
 .tab-button {
-  flex: 1;
-  padding: 10px 0;
-  border: none;
-  background: none;
+  padding: 6px 16px;
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  background: var(--surface);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ink3);
   cursor: pointer;
-  position: relative;
-  transition: color 0.15s;
+  transition: all 0.15s;
 }
 
 .tab-button[aria-selected='true'] {
-  color: var(--accent);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
   font-weight: 700;
-}
-
-.tab-button[aria-selected='true']::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 16px;
-  right: 16px;
-  height: 2px;
-  background-color: var(--accent);
-  border-radius: 1px;
 }
 
 /* Tab Panels */
 .tab-panel {
   display: none;
+  flex: 1;
+  min-height: 0;
 }
 
 .tab-panel[data-active='true'] {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Draw Tab */
-.draw-tab {
-  padding: 12px 16px;
-}
+/* ========================
+   Draw Screen (full screen canvas)
+   ======================== */
 
-.canvas-wrapper {
+.draw-screen {
   position: relative;
-  width: 100%;
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  overflow: hidden;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+  flex: 1;
+  min-height: 0;
 }
 
 .draw-canvas {
   display: block;
   width: 100%;
-  height: 300px;
+  height: 100%;
   background-color: var(--canvas-bg);
   touch-action: none;
   -webkit-user-select: none;
@@ -121,18 +114,31 @@ body {
   -webkit-touch-callout: none;
 }
 
+.candidates-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 8px 12px;
+  background: linear-gradient(to bottom, rgba(250, 250, 248, 0.95) 80%, transparent);
+}
+
 .clear-button {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  padding: 6px 14px;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+  padding: 10px 20px;
   border: 1px solid var(--border2);
-  border-radius: 6px;
-  background: var(--surface);
+  border-radius: 8px;
+  background: rgba(250, 250, 248, 0.9);
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink2);
   cursor: pointer;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   transition: background-color 0.15s;
 }
 
@@ -141,13 +147,68 @@ body {
 }
 
 .recognizing-indicator {
-  text-align: center;
-  padding: 8px;
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(250, 250, 248, 0.9);
   font-size: 13px;
   color: var(--ink3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-/* Keyboard Tab */
+/* ========================
+   Candidate List
+   ======================== */
+
+.candidate-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.candidate-list::-webkit-scrollbar {
+  display: none;
+}
+
+.candidate-button {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-serif);
+  font-size: 26px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, border-color 0.15s;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.candidate-button:active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.candidate-button[aria-selected='true'] {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ========================
+   Keyboard Tab
+   ======================== */
+
 .keyboard-tab {
   padding: 12px 16px;
 }
@@ -202,85 +263,73 @@ body {
   color: var(--ink3);
 }
 
-/* Candidate List */
-.candidate-list {
+/* ========================
+   Detail Screen (full page)
+   ======================== */
+
+.detail-screen {
+  height: 100dvh;
   display: flex;
-  gap: 8px;
-  padding: 12px 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  flex-direction: column;
+  background: var(--surface);
 }
 
-.candidate-list::-webkit-scrollbar {
-  display: none;
-}
-
-.candidate-button {
+.detail-header {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  width: 50px;
-  height: 50px;
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  background: var(--surface);
-  font-family: var(--font-serif);
-  font-size: 26px;
-  color: var(--ink);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.15s, border-color 0.15s;
 }
 
-.candidate-button:active {
-  background: var(--surface2);
-}
-
-.candidate-button[aria-selected='true'] {
-  background: var(--accent-light);
-  border-color: var(--accent);
+.back-button {
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 15px;
   color: var(--accent);
+  cursor: pointer;
 }
 
-/* Kanji Detail */
-.kanji-detail {
-  padding: 16px 0;
+.back-button:active {
+  opacity: 0.6;
 }
 
-.kanji-display {
+.detail-body {
+  flex: 1;
   display: flex;
-  justify-content: center;
-  padding: 12px 0;
-}
-
-.kanji-display-char {
-  width: 96px;
-  height: 96px;
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-family: var(--font-serif);
-  font-size: 68px;
-  color: var(--ink);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  padding: 24px 16px;
+  overflow-y: auto;
 }
 
-.kanji-readings {
-  padding: 8px 0;
+.detail-kanji-display {
+  font-family: var(--font-serif);
+  font-size: min(40vw, 200px);
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 24px;
 }
+
+.detail-info {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* ========================
+   Shared components
+   ======================== */
 
 .kanji-reading-row {
   display: flex;
   gap: 8px;
-  padding: 4px 0;
-  font-size: 14px;
+  padding: 6px 0;
+  font-size: 15px;
 }
 
 .kanji-reading-label {
   color: var(--ink3);
-  min-width: 48px;
+  min-width: 56px;
   flex-shrink: 0;
 }
 
@@ -290,22 +339,22 @@ body {
 
 .kanji-strokes {
   display: inline-block;
-  padding: 2px 10px;
-  margin: 8px 0;
-  font-size: 13px;
+  padding: 3px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
   color: var(--ink2);
   background: var(--surface2);
   border-radius: 12px;
 }
 
 .kanji-variants {
-  padding: 8px 0;
+  padding: 12px 0;
 }
 
 .kanji-variants-label {
   font-size: 13px;
   color: var(--ink3);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .kanji-variants-list {
@@ -314,10 +363,10 @@ body {
 }
 
 .variant-button {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border: 1px solid var(--border2);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
   font-family: var(--font-serif);
   font-size: 24px;

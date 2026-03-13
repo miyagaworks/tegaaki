@@ -22,35 +22,63 @@ function App() {
     handleSelectCandidate(kanji)
   }
 
-  return (
-    <>
-      <header className="title-bar">Tegaaki</header>
+  const handleBack = () => {
+    setSelectedKanji(null)
+  }
 
-      <div className="tab-bar" role="tablist">
-        <button
-          className="tab-button"
-          role="tab"
-          aria-selected={activeTab === 'draw'}
-          onClick={() => setActiveTab('draw')}
-        >
-          手書き
-        </button>
-        <button
-          className="tab-button"
-          role="tab"
-          aria-selected={activeTab === 'keyboard'}
-          onClick={() => setActiveTab('keyboard')}
-        >
-          キーボード
-        </button>
-      </div>
+  // Detail page
+  if (selectedKanji) {
+    return (
+      <KanjiDetail
+        entry={selectedKanji}
+        onSelectVariant={handleSelectVariant}
+        onBack={handleBack}
+      />
+    )
+  }
+
+  // Main page
+  return (
+    <div className="main-screen">
+      <header className="title-bar">
+        <span className="title-text">Tegaaki</span>
+        <div className="tab-bar" role="tablist">
+          <button
+            className="tab-button"
+            role="tab"
+            aria-selected={activeTab === 'draw'}
+            onClick={() => setActiveTab('draw')}
+          >
+            手書き
+          </button>
+          <button
+            className="tab-button"
+            role="tab"
+            aria-selected={activeTab === 'keyboard'}
+            onClick={() => setActiveTab('keyboard')}
+          >
+            キーボード
+          </button>
+        </div>
+      </header>
 
       <div
         className="tab-panel"
         role="tabpanel"
         data-active={activeTab === 'draw'}
       >
-        <DrawTab setCandidates={setCandidates} />
+        <div className="draw-screen">
+          {candidates.length > 0 && (
+            <div className="candidates-overlay">
+              <CandidateList
+                candidates={candidates}
+                selected={null}
+                onSelect={handleSelectCandidate}
+              />
+            </div>
+          )}
+          <DrawTab setCandidates={setCandidates} />
+        </div>
       </div>
 
       <div
@@ -62,27 +90,17 @@ function App() {
           setCandidates={setCandidates}
           setSelectedKanji={setSelectedKanji}
         />
+        {candidates.length > 0 && (
+          <div style={{ padding: '0 16px' }}>
+            <CandidateList
+              candidates={candidates}
+              selected={null}
+              onSelect={handleSelectCandidate}
+            />
+          </div>
+        )}
       </div>
-
-      {candidates.length > 0 && (
-        <div style={{ padding: '0 16px' }}>
-          <CandidateList
-            candidates={candidates}
-            selected={selectedKanji?.kanji ?? null}
-            onSelect={handleSelectCandidate}
-          />
-        </div>
-      )}
-
-      {selectedKanji && (
-        <div style={{ padding: '0 16px' }}>
-          <KanjiDetail
-            entry={selectedKanji}
-            onSelectVariant={handleSelectVariant}
-          />
-        </div>
-      )}
-    </>
+    </div>
   )
 }
 
