@@ -1,11 +1,11 @@
 :root {
-  --ink: #1a1a1a;
+  --ink: #000811;
   --ink2: #555555;
   --ink3: #999999;
   --surface: #fafaf8;
   --surface2: #f2f0ec;
-  --border: rgba(0, 0, 0, 0.1);
-  --border2: rgba(0, 0, 0, 0.18);
+  --border: #000811;
+  --border2: #00060c;
   --accent: #2d5a8e;
   --accent-light: #e8f0f9;
   --canvas-bg: #fffef9;
@@ -50,10 +50,9 @@ html, body, #root {
   flex-shrink: 0;
 }
 
-.title-text {
-  font-family: var(--font-serif);
-  font-size: 18px;
-  font-weight: 700;
+.title-logo {
+  height: 28px;
+  width: auto;
   margin-right: auto;
 }
 

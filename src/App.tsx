@@ -41,7 +41,7 @@ function App() {
   return (
     <div className="main-screen">
       <header className="title-bar">
-        <span className="title-text">Tegaaki</span>
+        <img src="/images/logo.svg" alt="Tegaaki" className="title-logo" />
         <div className="tab-bar" role="tablist">
           <button
             className="tab-button"
