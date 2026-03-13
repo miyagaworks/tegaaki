@@ -68,17 +68,17 @@ function App() {
         data-active={activeTab === 'draw'}
       >
         <div className="draw-screen">
-          {candidates.length > 0 && (
-            <div className="candidates-overlay">
-              <CandidateList
-                candidates={candidates}
-                selected={null}
-                onSelect={handleSelectCandidate}
-              />
-            </div>
-          )}
           <DrawTab setCandidates={setCandidates} />
         </div>
+        {candidates.length > 0 && (
+          <div className="candidates-bar">
+            <CandidateList
+              candidates={candidates}
+              selected={null}
+              onSelect={handleSelectCandidate}
+            />
+          </div>
+        )}
       </div>
 
       <div
