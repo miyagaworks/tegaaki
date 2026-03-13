@@ -60,6 +60,8 @@ html, body, #root {
   width: auto;
   margin-right: auto;
   margin-top: 8px;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .tab-bar {

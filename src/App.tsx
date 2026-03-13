@@ -41,7 +41,7 @@ function App() {
   return (
     <div className="main-screen">
       <header className="title-bar">
-        <img src="/images/logo.svg" alt="Tegaaki" className="title-logo" />
+        <img src="/images/logo.svg" alt="Tegaaki" className="title-logo" draggable={false} onContextMenu={(e) => e.preventDefault()} />
         <div className="tab-bar" role="tablist">
           <button
             className="tab-button"
