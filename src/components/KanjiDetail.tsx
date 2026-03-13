@@ -1,3 +1,4 @@
+import { IoChevronBack } from 'react-icons/io5'
 import type { KanjiEntry } from '../lib/kanjidb'
 
 interface KanjiDetailProps {
@@ -17,7 +18,7 @@ export function KanjiDetail({ entry, onSelectVariant, onBack }: KanjiDetailProps
     <div className="detail-screen">
       <header className="detail-header">
         <button className="back-button" type="button" onClick={onBack}>
-          ← 戻る
+          <IoChevronBack /> 戻る
         </button>
       </header>
 

@@ -8,7 +8,8 @@
   --border2: #00060c;
   --accent: #2d5a8e;
   --accent-light: #e8f0f9;
-  --canvas-bg: #fffef9;
+  --canvas-bg: #f5f0e6;
+  --washi: #f5f0e6;
   --font-serif: 'Noto Serif JP', serif;
   --font-sans: 'Noto Sans JP', sans-serif;
 }
@@ -46,37 +47,42 @@ html, body, #root {
   display: flex;
   align-items: center;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   flex-shrink: 0;
+  background: linear-gradient(to bottom, #1f2c44, #000811);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .title-logo {
-  height: 28px;
+  height: 44px;
   width: auto;
   margin-right: auto;
+  margin-top: 8px;
 }
 
 .tab-bar {
   display: flex;
-  gap: 2px;
+  gap: 8px;
 }
 
 .tab-button {
-  padding: 6px 16px;
-  border: 1px solid var(--border2);
+  padding: 4px 16px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 20px;
-  background: var(--surface);
+  background: transparent;
   font-family: var(--font-sans);
   font-size: 13px;
-  color: var(--ink3);
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .tab-button[aria-selected='true'] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
   font-weight: 700;
 }
 
@@ -133,6 +139,9 @@ html, body, #root {
   font-size: 15px;
   color: var(--ink2);
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   transition: background-color 0.15s;
@@ -267,23 +276,28 @@ html, body, #root {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: var(--washi);
 }
 
 .detail-header {
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  background: linear-gradient(to bottom, #1f2c44, #000811);
   flex-shrink: 0;
 }
 
 .back-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 12px;
   border: none;
   background: none;
   font-family: var(--font-sans);
   font-size: 15px;
-  color: var(--accent);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .back-button:active {
@@ -300,7 +314,7 @@ html, body, #root {
 }
 
 .detail-kanji-display {
-  font-family: var(--font-serif);
+  font-family: 'Klee One', var(--font-serif);
   font-size: min(70vw, 360px);
   line-height: 1.1;
   color: var(--ink);
