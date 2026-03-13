@@ -68,7 +68,7 @@ export async function recognize(
 
 export function preprocessCanvas(canvas: HTMLCanvasElement): Float32Array {
   const size = 64
-  const padding = 8 // px padding around the character in 64x64 space
+  const padding = 2 // px padding around the character in 64x64 space
   const alphaThreshold = 128 // ignore guide lines (alpha ~15), detect strokes (alpha 255)
 
   // Find bounding box of drawn strokes (ignoring guide lines)
@@ -98,7 +98,7 @@ export function preprocessCanvas(canvas: HTMLCanvasElement): Float32Array {
   // Add a small margin around the detected strokes (10% of the bounding box)
   const bw = maxX - minX
   const bh = maxY - minY
-  const margin = Math.max(bw, bh) * 0.1
+  const margin = Math.max(bw, bh) * 0.05
   minX = Math.max(0, minX - margin)
   minY = Math.max(0, minY - margin)
   maxX = Math.min(canvas.width, maxX + margin)
