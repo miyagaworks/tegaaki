@@ -5,7 +5,12 @@
  * node-canvas でフォント描画した漢字画像をモデルに入力し、
  * Top-1 / Top-5 / Top-10 正解率を計測する。
  *
- * Usage: npx tsx scripts/test-accuracy.ts
+ * ノイズ生成は決定論的な擬似乱数（シード固定）を使うため、
+ * モデルディレクトリを変えて複数回実行しても同一の入力で比較できる。
+ *
+ * Usage: npx tsx scripts/test-accuracy.ts [modelDir] [reportPath]
+ *   modelDir:   検証するモデルディレクトリ（デフォルト: public/model）
+ *   reportPath: レポート出力先（デフォルト: docs/accuracy-report.md）
  */
 
 import * as tf from '@tensorflow/tfjs'
@@ -19,10 +24,10 @@ const __dirname = dirname(__filename)
 
 // ── Config ──────────────────────────────────────────────
 
-const MODEL_DIR = resolve(__dirname, '../public/model')
+const MODEL_DIR = resolve(__dirname, '..', process.argv[2] ?? 'public/model')
 const LABELS_PATH = resolve(MODEL_DIR, 'labels.txt')
 const KANJIDIC_PATH = resolve(__dirname, '../src/data/kanjidic.json')
-const REPORT_PATH = resolve(__dirname, '../docs/accuracy-report.md')
+const REPORT_PATH = resolve(__dirname, '..', process.argv[3] ?? 'docs/accuracy-report.md')
 const INPUT_SIZE = 64
 
 // 画数の異なる50字（簡単→複雑を均等に選定）
@@ -51,6 +56,23 @@ const TEST_KANJI = [
 
 // macOS で利用可能な明朝体フォント
 const FONT_FAMILY = 'Hiragino Mincho ProN'
+
+// ── Deterministic RNG ───────────────────────────────────
+// モデルディレクトリを変えて別プロセスで実行しても同じノイズパターンを
+// 再現できるよう、Math.random() の代わりに固定シードの擬似乱数を使う。
+
+function mulberry32(seed: number): () => number {
+  let a = seed
+  return function () {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+const rng = mulberry32(42)
 
 // ── Model Loading ───────────────────────────────────────
 
@@ -97,6 +119,22 @@ function loadJoyoSet(): Set<string> {
   return new Set(data.map((e: { kanji: string }) => e.kanji))
 }
 
+// モデルに実際に使われている量子化方式をレポート表記用に検出する
+// （モデルディレクトリを差し替えても記述が古くならないように）
+function detectQuantizationLabel(modelDir: string): string {
+  const modelJSON = JSON.parse(readFileSync(resolve(modelDir, 'model.json'), 'utf-8'))
+  const weights = modelJSON.weightsManifest.flatMap(
+    (g: { weights: tf.io.WeightsManifestEntry[] }) => g.weights,
+  )
+  const dtypes = new Set(
+    weights
+      .map((w: tf.io.WeightsManifestEntry) => w.quantization?.dtype)
+      .filter((d: string | undefined): d is string => Boolean(d)),
+  )
+  if (dtypes.size === 0) return '量子化なし'
+  return `${[...dtypes].join('/')}量子化`
+}
+
 // ── Canvas Drawing ──────────────────────────────────────
 
 function drawKanji(
@@ -122,7 +160,7 @@ function drawKanji(
   if (noise) {
     const imageData = ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE)
     for (let i = 0; i < imageData.data.length; i += 4) {
-      const n = (Math.random() - 0.5) * 6
+      const n = (rng() - 0.5) * 6
       imageData.data[i] = Math.max(0, Math.min(255, imageData.data[i] + n))
       imageData.data[i + 1] = Math.max(
         0,
@@ -191,11 +229,13 @@ const TEST_VARIATIONS: TestCase[] = [
 // ── Main ────────────────────────────────────────────────
 
 async function main() {
+  console.log(`Model dir: ${MODEL_DIR}`)
+  const quantLabel = detectQuantizationLabel(MODEL_DIR)
   console.log('Loading model...')
   const model = await loadModel()
   const labels = loadLabels()
   const joyoSet = loadJoyoSet()
-  console.log(`Model loaded. Labels: ${labels.length}, Joyo: ${joyoSet.size}`)
+  console.log(`Model loaded. Labels: ${labels.length}, Joyo: ${joyoSet.size}, Quantization: ${quantLabel}`)
 
   const results: {
     char: string
@@ -265,7 +305,8 @@ async function main() {
   report += `生成日: ${now}\n\n`
   report += `## テスト条件\n\n`
   report += `| 項目 | 値 |\n|------|-----|\n`
-  report += `| モデル | DaKanji EfficientNet-Lite0 (float16量子化) |\n`
+  report += `| モデル | DaKanji EfficientNet-Lite0 (${quantLabel}) |\n`
+  report += `| モデルパス | ${MODEL_DIR.split('/').slice(-2).join('/')} |\n`
   report += `| 入力サイズ | ${INPUT_SIZE}×${INPUT_SIZE} grayscale |\n`
   report += `| テスト文字数 | ${TEST_KANJI.length}字 |\n`
   report += `| バリエーション | ${TEST_VARIATIONS.map((v) => v.name).join(', ')} |\n`

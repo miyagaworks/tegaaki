@@ -14,7 +14,7 @@ let readyPromise: Promise<void> | null = null
 let ready = false
 
 async function loadLabels(): Promise<string[]> {
-  const res = await fetch('/model/labels.txt')
+  const res = await fetch('/model/v2/labels.txt')
   const text = await res.text()
   return [...text]
 }
@@ -47,7 +47,7 @@ async function ensureModel(): Promise<void> {
     tf = core
     await initBackend(core)
     const [m, l, j] = await Promise.all([
-      converter.loadGraphModel('/model/model.json'),
+      converter.loadGraphModel('/model/v2/model.json'),
       loadLabels(),
       loadJoyoSet(),
     ])
