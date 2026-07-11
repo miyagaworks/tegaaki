@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react'
-import { recognize } from '../lib/recognizer'
+import { recognize, isModelReady, preloadModel } from '../lib/recognizer'
 
 interface DrawTabProps {
   setCandidates: (candidates: string[]) => void
@@ -11,6 +11,7 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
   const hasStrokes = useRef(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [recognizing, setRecognizing] = useState(false)
+  const [modelReady, setModelReady] = useState(isModelReady())
 
   const drawGuideLines = useCallback((ctx: CanvasRenderingContext2D) => {
     const w = ctx.canvas.width
@@ -85,6 +86,17 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
 
     drawGuideLines(ctx)
   }, [drawGuideLines])
+
+  useEffect(() => {
+    if (modelReady) return
+    let cancelled = false
+    preloadModel().then(() => {
+      if (!cancelled) setModelReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [modelReady])
 
   useEffect(() => {
     initCanvas()
@@ -174,7 +186,11 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
       <button className="clear-button" type="button" onClick={clearCanvas}>
         消す
       </button>
-      {recognizing && <div className="recognizing-indicator">認識中...</div>}
+      {recognizing && (
+        <div className="recognizing-indicator">
+          {modelReady ? '認識中...' : '準備中…'}
+        </div>
+      )}
     </>
   )
 }

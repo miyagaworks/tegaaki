@@ -9,6 +9,8 @@ let model: import('@tensorflow/tfjs').GraphModel | null = null
 let labels: string[] = []
 let joyoSet: Set<string> | null = null
 let initPromise: Promise<void> | null = null
+let readyPromise: Promise<void> | null = null
+let ready = false
 
 async function loadLabels(): Promise<string[]> {
   const res = await fetch('/model/labels.txt')
@@ -38,10 +40,29 @@ async function ensureModel(): Promise<void> {
   return initPromise
 }
 
+export function isModelReady(): boolean {
+  return ready
+}
+
+export function preloadModel(): Promise<void> {
+  if (!readyPromise) {
+    readyPromise = (async () => {
+      await ensureModel()
+      const dummy = tf!.tensor4d(new Float32Array(64 * 64), [1, 64, 64, 1])
+      const output = model!.predict(dummy) as import('@tensorflow/tfjs').Tensor
+      await output.data()
+      dummy.dispose()
+      output.dispose()
+      ready = true
+    })()
+  }
+  return readyPromise
+}
+
 export async function recognize(
   canvas: HTMLCanvasElement,
 ): Promise<RecognizeResult> {
-  await ensureModel()
+  await preloadModel()
 
   const input = preprocessCanvas(canvas)
   const tensor = tf!.tensor4d(input, [1, 64, 64, 1])
