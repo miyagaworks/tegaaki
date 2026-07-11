@@ -84,6 +84,10 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
     if (!ctx) return
 
     const dpr = window.devicePixelRatio || 1
+    const strokeWidth = Math.min(
+      14 * dpr,
+      Math.max(8 * dpr, Math.min(ctx.canvas.width, ctx.canvas.height) / 35),
+    )
     const activeStroke = activeStrokeRef.current
     const predictedPoints = predictedPointsRef.current
 
@@ -92,11 +96,11 @@ export function DrawTab({ setCandidates }: DrawTabProps) {
 
     for (const stroke of strokesRef.current) {
       if (stroke === activeStroke && predictedPoints.length > 0) continue
-      drawSmoothStroke(ctx, stroke, 5 * dpr)
+      drawSmoothStroke(ctx, stroke, strokeWidth)
     }
 
     if (activeStroke && predictedPoints.length > 0) {
-      drawSmoothStroke(ctx, [...activeStroke, ...predictedPoints], 5 * dpr)
+      drawSmoothStroke(ctx, [...activeStroke, ...predictedPoints], strokeWidth)
     }
   }, [drawGuideLines])
 
