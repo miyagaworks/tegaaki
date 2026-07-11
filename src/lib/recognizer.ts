@@ -2,10 +2,11 @@ export interface RecognizeResult {
   candidates: string[]
 }
 
-type TF = typeof import('@tensorflow/tfjs')
+type TFCore = typeof import('@tensorflow/tfjs-core')
+type TFConverter = typeof import('@tensorflow/tfjs-converter')
 
-let tf: TF | null = null
-let model: import('@tensorflow/tfjs').GraphModel | null = null
+let tf: TFCore | null = null
+let model: import('@tensorflow/tfjs-converter').GraphModel | null = null
 let labels: string[] = []
 let joyoSet: Set<string> | null = null
 let initPromise: Promise<void> | null = null
@@ -23,13 +24,30 @@ async function loadJoyoSet(): Promise<Set<string>> {
   return new Set((data as { kanji: string }[]).map((e) => e.kanji))
 }
 
+// WebGL を優先して初期化し、利用できない環境（コンテキスト生成失敗など）では
+// CPU バックエンドにフォールバックする。
+async function initBackend(core: TFCore): Promise<void> {
+  await import('@tensorflow/tfjs-backend-webgl')
+  const webglReady = await core.setBackend('webgl')
+  if (!webglReady) {
+    await import('@tensorflow/tfjs-backend-cpu')
+    await core.setBackend('cpu')
+  }
+  await core.ready()
+}
+
 async function ensureModel(): Promise<void> {
   if (model) return
   if (initPromise) return initPromise
   initPromise = (async () => {
-    tf = await import('@tensorflow/tfjs')
+    const [core, converter]: [TFCore, TFConverter] = await Promise.all([
+      import('@tensorflow/tfjs-core'),
+      import('@tensorflow/tfjs-converter'),
+    ])
+    tf = core
+    await initBackend(core)
     const [m, l, j] = await Promise.all([
-      tf.loadGraphModel('/model/model.json'),
+      converter.loadGraphModel('/model/model.json'),
       loadLabels(),
       loadJoyoSet(),
     ])
@@ -49,7 +67,7 @@ export function preloadModel(): Promise<void> {
     readyPromise = (async () => {
       await ensureModel()
       const dummy = tf!.tensor4d(new Float32Array(64 * 64), [1, 64, 64, 1])
-      const output = model!.predict(dummy) as import('@tensorflow/tfjs').Tensor
+      const output = model!.predict(dummy) as import('@tensorflow/tfjs-core').Tensor
       await output.data()
       dummy.dispose()
       output.dispose()
@@ -67,7 +85,7 @@ export async function recognize(
   const input = preprocessCanvas(canvas)
   const tensor = tf!.tensor4d(input, [1, 64, 64, 1])
 
-  const output = model!.predict(tensor) as import('@tensorflow/tfjs').Tensor
+  const output = model!.predict(tensor) as import('@tensorflow/tfjs-core').Tensor
   const probs = await output.data()
 
   tensor.dispose()
