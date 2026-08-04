@@ -25,3 +25,6 @@ dist-ssr
 
 # KANJIDIC2 XML (large, manually downloaded)
 data/kanjidic2.xml
+
+# env files
+.env*
